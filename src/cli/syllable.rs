@@ -155,8 +155,8 @@ impl Syllable {
     /// transform 1-4 tones into diacritics on relevant vowels
     pub fn tone_to_diacritics(&self) -> String {
         // Determine the tone index (0-4) or return the original rhyme if invalid
-        let tone = match self.tone {
-            Some(t) if (1..=5).contains(&t) => t - 1,
+        let vowels_with_diacritics_index = match self.tone {
+            Some(real_tone) if (1..=5).contains(&real_tone) => real_tone - 1,
             _ => return self.rhyme.clone(),
         };
 
@@ -182,10 +182,15 @@ impl Syllable {
         // Replace the target vowel with the diacritic version
         if let Some(vowel) = target_vowel {
             if let Some(pos) = self.rhyme.find(vowel) {
+                // Look up the TONE_DIACRITIC_MAP
                 let diacritic = TONE_DIACRITIC_MAP
                     .iter()
-                    .find(|&&(v, _)| v == vowel)
-                    .map(|&(_, diacritics)| diacritics[tone])
+                    .find(|&&(vowel_row, _)| vowel_row == vowel) // find the
+                    // correct row
+                    .map(|&(_, vowels_with_diacritics)| {
+                        vowels_with_diacritics[vowels_with_diacritics_index]
+                    }) // find the
+                    // correct cell
                     .unwrap_or("");
                 let mut word_with_diacritic = self.rhyme.clone();
                 word_with_diacritic.replace_range(pos..pos + vowel.len(), diacritic);
