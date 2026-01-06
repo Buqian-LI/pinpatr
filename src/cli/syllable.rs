@@ -81,9 +81,13 @@ impl Syllable {
 
         let tone_transformed: String = match &format {
             Format::IPASuperscript => self.tone_to_superscript(tone_to_transform)?,
-            Format::IPALaTeX => (!tone_to_transform.is_empty())
-                .then(|| format!(r"\{latex_wrapper}{{{tone_to_transform}}}"))
-                .unwrap_or_default(),
+            Format::IPALaTeX => {
+                if !tone_to_transform.is_empty() {
+                    format!(r"\{latex_wrapper}{{{tone_to_transform}}}")
+                } else {
+                    Default::default()
+                }
+            }
             _ => String::new(), // never reachable
         };
 
