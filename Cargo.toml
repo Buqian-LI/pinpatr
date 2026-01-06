@@ -16,5 +16,4 @@ indexmap = "2.7.1"
 lazy_static = "1.5.0"
 phf = { version = "0.11.3", features = ["macros"] }
 regex = "1.11.1"
-rusqlite = "0.34.0"
 unicode-normalization = "0.1.24"
