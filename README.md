@@ -1,6 +1,6 @@
-# `pinpatr`
+# `siphon`
 
-A CLI tool to convert text in Pinyin to IPA.
+A CLI tool for Chinese Pinyin and IPA conversion.
 
 ## Arguments
 
@@ -56,6 +56,6 @@ default: textsuperscript
 
 ## Caveat
 
-For the phoneme ü, you can input either 'v', the decomposed form 'ü' (u +  ̈), or the precomposed form 'ü'.
+For the phoneme ü, you can input either 'v', the decomposed form 'ü' (u +  ̈), or the pre-composed form 'ü'.
 
 The output will always use the decomposed form, as most fonts prioritize support for decomposed characters over pre-composed ones. This ensures consistent rendering across systems.
