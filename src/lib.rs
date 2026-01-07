@@ -1,7 +1,7 @@
 pub mod cli;
 
 pub use cli::token::Token;
-pub use cli::Pinpatr;
+pub use cli::Siphon;
 
 use phf::phf_map;
 

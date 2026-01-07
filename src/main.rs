@@ -1,17 +1,17 @@
 use anyhow::Result;
 use clap::Parser;
-use pinpatr::{Pinpatr, Token};
+use siphon::{Siphon, Token};
 
 fn main() -> Result<()> {
-    let args: Pinpatr = Pinpatr::parse();
-    let tokens: Vec<Token> = args.tokenize()?;
+    let siphon: Siphon = Siphon::parse();
+    let tokens: Vec<Token> = siphon.tokenize()?;
 
-    if args.get_debug() {
-        println!("[args]\n{:#?}", args);
+    if siphon.get_debug() {
+        println!("[args]\n{:#?}", siphon);
         println!("[tokenized text]\n{:?}", tokens);
     }
 
-    let output: String = args.transform(tokens)?;
+    let output: String = siphon.transform(tokens)?;
     println!("{}", output);
 
     Ok(())

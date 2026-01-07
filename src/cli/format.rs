@@ -16,6 +16,18 @@ pub enum Format {
     /// in Pinyin with numbers wrapped in LaTeX command (i.e. zhe\textsuperscript{214})
     ///    (aliases: pynum, pylatex, pinyinlatex, number)
     #[value(
+        name = "sup",
+        alias = "pysup",
+        alias = "pysuper",
+        alias = "pinyinsuper",
+        alias = "pysuperscript",
+        alias = "pinyinsuperscript",
+        verbatim_doc_comment
+    )]
+    PinyinSuperscript,
+    /// in Pinyin with numbers wrapped in LaTeX command (i.e. zhe\textsuperscript{214})
+    ///    (aliases: pynum, pylatex, pinyinlatex, number)
+    #[value(
         name = "num",
         alias = "number",
         alias = "pynum",
@@ -38,11 +50,10 @@ pub enum Format {
     /// in IPA with superscript number (i.e. tʂɤ²¹⁴)
     ///    (aliases: ipasup, ipasuper, super, superscript)
     #[value(
-        name = "sup",
-        alias = "ipasup",
-        alias = "ipasuper",
+        name = "ipasup",
         alias = "super",
-        alias = "superscript",
+        alias = "ipasuper",
+        alias = "ipasuperscript",
         verbatim_doc_comment
     )]
     IPASuperscript,

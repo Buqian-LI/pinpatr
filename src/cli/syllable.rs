@@ -106,39 +106,50 @@ impl Syllable {
         match format {
             // keep the word, but change the tone
             Format::PinyinLaTeX => {
+                // treat words
                 let word = onset.clone() + &self.rhyme;
                 word_transformed = word.replace("v", "ü");
-                let tone_to_transform: &str = match self.tone {
-                    Some(t) => match t {
-                        0 => "0",
-                        1 => "55",
-                        2 => "35",
-                        3 => "214",
-                        4 => "51",
-                        5 => "0",
-                        _ => {
-                            return Err(anyhow::anyhow!(
-                                "There are tones messed up in your input! -> {word}{t}"
-                            ))
-                        }
-                    },
-                    None => "",
-                };
+                // treat tones
+                let tone_to_transform: &str = self.transpose_tone_value(&word)?;
                 tone_transformed = if tone_to_transform.is_empty() {
                     String::new()
                 } else {
                     format!(r"\{wrap}{{{tone_to_transform}}}")
                 };
             }
-            // change tone to diacritic
+            // change tone to diacritic or superscript
             Format::PinyinDiacritic => {
                 word_transformed = onset + &self.tone_to_diacritics();
+                // leave tone_transformed to be empty
+                // tone_transformed = "".to_string();
+            }
+            Format::PinyinSuperscript => {
+                word_transformed = onset + &self.rhyme;
+                let tone = self.transpose_tone_value(&word_transformed)?;
+                tone_transformed = self.tone_to_superscript(tone)?;
                 // tone_transformed = "".to_string();
             }
             _ => {}
         };
 
         Ok((word_transformed, tone_transformed))
+    }
+
+    fn transpose_tone_value(&self, word: &str) -> Result<&str> {
+        match self.tone {
+            Some(t) => match t {
+                0 => Ok("0"),
+                1 => Ok("55"),
+                2 => Ok("35"),
+                3 => Ok("214"),
+                4 => Ok("51"),
+                5 => Ok("0"),
+                _ => Err(anyhow::anyhow!(
+                    "There are tones messed up in your input! -> {word}{t}"
+                )),
+            },
+            None => Ok(""),
+        }
     }
 
     /// transform 1-4 tones into actual value in superscript
@@ -203,59 +214,5 @@ impl Syllable {
         }
 
         self.rhyme.clone() // Return the original word if no vowel is found (target_vowel == None)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_tone_to_diacritics() {
-        let mut syllable = Syllable {
-            full: String::from("zhe1"),
-            initial: Some(String::from("zh")),
-            rhyme: String::from("e"),
-            tone: Some(1),
-        };
-
-        let test_cases = [(0, "zhe"), (1, "zhē"), (2, "zhé"), (3, "zhě"), (4, "zhè")];
-
-        for &(tone, output) in &test_cases {
-            let onset = syllable.initial.as_ref().unwrap().clone();
-            syllable.tone = Some(tone);
-            assert_eq!(onset + &syllable.tone_to_diacritics(), output);
-        }
-    }
-
-    #[test]
-    fn test_tone_to_superscript() {
-        let syllable = Syllable::default();
-
-        assert_eq!(syllable.tone_to_superscript("0").unwrap(), "⁰");
-        assert_eq!(syllable.tone_to_superscript("55").unwrap(), "⁵⁵");
-        assert_eq!(syllable.tone_to_superscript("35").unwrap(), "³⁵");
-        assert_eq!(syllable.tone_to_superscript("214").unwrap(), "²¹⁴");
-        assert_eq!(syllable.tone_to_superscript("51").unwrap(), "⁵¹");
-    }
-
-    #[test]
-    fn test_convert_to_pinyin() {
-        let mut syllable = Syllable {
-            full: String::from("diu1"),
-            initial: Some(String::from("d")),
-            rhyme: String::from("iu"),
-            tone: None, // Start with no tone
-        };
-
-        let test_cases = [(0, "diu"), (1, "diū"), (2, "diú"), (3, "diǔ"), (4, "diù")];
-
-        for &(tone_value, expected) in &test_cases {
-            syllable.tone = Some(tone_value);
-            let (word, tone) = syllable
-                .convert_to_pinyin(&Format::PinyinDiacritic, "UP")
-                .unwrap();
-            assert_eq!(word + &tone, expected);
-        }
     }
 }

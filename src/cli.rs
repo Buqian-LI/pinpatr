@@ -15,9 +15,7 @@ pub mod token;
 #[command(
     author = "Buqian LI <buqian.li@outlook.com>",
     version = "1.6.0",
-    name = "pinpatr",
-    bin_name = "pinpatr",
-    about = "A CLI tool to convert text in Pinyin to IPA.",
+    about = "A CLI tool box for Chinese phonological conversion (SInoPHONe).",
     long_about = None,
     help_template= "\
     {name} {version}
@@ -32,7 +30,7 @@ OPTIONS:
 {options}
     "
 )]
-pub struct Pinpatr {
+pub struct Siphon {
     /// Transcription format of the output text
     /// (aliases: toneformat, textformat)
     #[arg(
@@ -69,13 +67,13 @@ pub struct Pinpatr {
         allow_hyphen_values = true,
         verbatim_doc_comment
     )]
-    text: Vec<String>,
+    text: Vec<String>, // NOTE: must be this type to be able to receive continous args
     /// Print debug info
     #[arg(short = 'd', long = "debug", default_value_t = false)]
     debug: bool,
 }
 
-impl Default for Pinpatr {
+impl Default for Siphon {
     fn default() -> Self {
         Self {
             format: Format::PinyinDiacritic,
@@ -86,9 +84,14 @@ impl Default for Pinpatr {
     }
 }
 
-impl Pinpatr {
-    pub fn new() -> Self {
+impl Siphon {
+    pub fn new(text: &str) -> Self {
+        let text: Vec<String> = text
+            .split_whitespace()
+            .map(|value| value.to_string())
+            .collect();
         Self {
+            text,
             ..Default::default()
         }
     }
@@ -106,8 +109,11 @@ impl Pinpatr {
     }
 
     /// Set input pinyin text
-    pub fn text(mut self, text: Vec<String>) -> Self {
-        self.text = text;
+    pub fn text(mut self, text: String) -> Self {
+        self.text = text
+            .split_whitespace()
+            .map(|value| value.to_string())
+            .collect();
         self
     }
 
@@ -128,8 +134,8 @@ impl Pinpatr {
         &self.format
     }
 
-    pub fn get_text(&self) -> &Vec<String> {
-        &self.text
+    pub fn get_text(&self) -> String {
+        self.text.join(" ").clone()
     }
 
     pub fn get_debug(&self) -> bool {
@@ -142,10 +148,6 @@ impl Pinpatr {
 
     pub fn set_format(&mut self, format: Format) {
         self.format = format
-    }
-
-    pub fn set_text(&mut self, text: Vec<String>) {
-        self.text = text
     }
 
     pub fn set_debug(&mut self, debug: bool) {
@@ -257,7 +259,9 @@ impl Pinpatr {
             .map(|tok| {
                 let (word_transformed, tone_transformed) = match tok {
                     Token::Syllable(syl) => match self.format {
-                        Format::PinyinLaTeX | Format::PinyinDiacritic => {
+                        Format::PinyinLaTeX
+                        | Format::PinyinDiacritic
+                        | Format::PinyinSuperscript => {
                             syl.convert_to_pinyin(self.get_format(), self.get_latex_wrapper())?
                         }
                         Format::IPALaTeX | Format::IPASuperscript => {
@@ -266,7 +270,9 @@ impl Pinpatr {
                     },
                     Token::Separator => match self.format {
                         // keep the separator
-                        Format::PinyinDiacritic => (String::from("'"), String::new()),
+                        Format::PinyinDiacritic | Format::PinyinSuperscript => {
+                            (String::from("'"), String::new())
+                        }
                         // remove the separator
                         Format::PinyinLaTeX | Format::IPALaTeX | Format::IPASuperscript => {
                             (String::new(), String::new())
