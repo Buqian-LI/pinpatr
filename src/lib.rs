@@ -5,6 +5,8 @@ pub use cli::Siphon;
 
 use phf::phf_map;
 
+const TONE_SUPERSCRIPT_DIGITS: [char; 6] = ['⁰', '¹', '²', '³', '⁴', '⁵'];
+
 /// Mapping of vowels to their diacritic versions for each tone
 /// 0123243
 const TONE_DIACRITIC_MAP: [(&str, [&str; 4]); 8] = [

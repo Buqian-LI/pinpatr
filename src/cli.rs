@@ -270,13 +270,12 @@ impl Siphon {
                     },
                     Token::Separator => match self.format {
                         // keep the separator
-                        Format::PinyinDiacritic | Format::PinyinSuperscript => {
-                            (String::from("'"), String::new())
-                        }
+                        Format::PinyinDiacritic => (String::from("'"), String::new()),
                         // remove the separator
-                        Format::PinyinLaTeX | Format::IPALaTeX | Format::IPASuperscript => {
-                            (String::new(), String::new())
-                        }
+                        Format::PinyinSuperscript
+                        | Format::PinyinLaTeX
+                        | Format::IPALaTeX
+                        | Format::IPASuperscript => (String::new(), String::new()),
                     },
                     Token::Punctuation(p) => (p.clone(), String::new()),
                     Token::Space => (String::from(" "), String::new()),

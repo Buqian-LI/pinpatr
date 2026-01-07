@@ -13,8 +13,8 @@ pub enum Format {
         verbatim_doc_comment
     )]
     PinyinDiacritic,
-    /// in Pinyin with numbers wrapped in LaTeX command (i.e. zhe\textsuperscript{214})
-    ///    (aliases: pynum, pylatex, pinyinlatex, number)
+    /// in Pinyin with numbers wrapped in LaTeX command (i.e. zhe²¹⁴)
+    ///    (aliases: sup, pysup, pysuper, pinyinsuper, pysuperscript, pinyinsuperscript)
     #[value(
         name = "sup",
         alias = "pysup",
@@ -26,9 +26,9 @@ pub enum Format {
     )]
     PinyinSuperscript,
     /// in Pinyin with numbers wrapped in LaTeX command (i.e. zhe\textsuperscript{214})
-    ///    (aliases: pynum, pylatex, pinyinlatex, number)
+    ///    (aliases: pynum, number, pylatex, pinyinlatex)
     #[value(
-        name = "num",
+        name = "pytex",
         alias = "number",
         alias = "pynum",
         alias = "pylatex",
@@ -40,15 +40,15 @@ pub enum Format {
     ///    (aliases: ipa, ipatex, ipalatex, tex, latex)
     #[value(
         name = "ipa",
-        alias = "ipatex",
-        alias = "ipalatex",
         alias = "tex",
         alias = "latex",
+        alias = "ipatex",
+        alias = "ipalatex",
         verbatim_doc_comment
     )]
     IPALaTeX,
     /// in IPA with superscript number (i.e. tʂɤ²¹⁴)
-    ///    (aliases: ipasup, ipasuper, super, superscript)
+    ///    (aliases: ipasup, super, ipasuper, ipasuperscript)
     #[value(
         name = "ipasup",
         alias = "super",
