@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Parser;
 use regex::Regex;
 use unicode_normalization::UnicodeNormalization;
@@ -6,6 +6,8 @@ use unicode_normalization::UnicodeNormalization;
 use format::Format;
 use syllable::Syllable;
 use token::Token;
+
+use crate::error::SiphonError;
 
 pub mod format;
 pub mod syllable;
@@ -161,7 +163,7 @@ impl Siphon {
     /// Normalize the input text using NFC to handle combining diacritics
     fn normalize_input_to_unicode(&self) -> String {
         let input: &String = &self.text.join(" ");
-        let normalized_text = input.nfc().collect::<String>();
+        let normalized_text: String = input.nfc().collect::<String>();
         if *input != normalized_text {
             println!("Input text has been normalized as -> {:?}", normalized_text);
         }
@@ -171,9 +173,9 @@ impl Siphon {
     /// Regex pattern to match:
     /// 1. A sequence of letters followed by an optional number (e.g., zhe4, shi)
     /// 2. Keep spaces and punctuation in order to reproduce the same final text
-    fn get_regex(&self) -> Regex {
+    fn get_regex(&self) -> Result<Regex, SiphonError> {
         // (?x) to make # xxxx to be ignored
-        Regex::new(
+        Ok(Regex::new(
             r#"(?x)
             (?i: # case-insensitive
                 (?<syllable>
@@ -187,8 +189,7 @@ impl Siphon {
             |(?<quote>['])
             |(?<punctuation>[,!?.\-:"=])
             "#,
-        )
-        .unwrap()
+        )?)
     }
 
     /// Correct rhyme parsing
@@ -209,24 +210,26 @@ impl Siphon {
     }
 
     /// Convert text from String to Vec<Token> using Regex
-    pub fn tokenize(&self) -> Result<Vec<Token>> {
+    pub fn tokenize(&self) -> Result<Vec<Token>, SiphonError> {
         let mut tokens: Vec<Token> = Vec::new();
         let text: String = self.normalize_input_to_unicode();
-        let regex: Regex = self.get_regex();
+        let regex: Regex = self.get_regex()?;
 
-        for cap in regex.captures_iter(&text) {
-            if let Some(syllable) = cap.name("syllable") {
-                let onset = cap
+        for captures in regex.captures_iter(&text) {
+            if let Some(syllable) = captures.name("syllable") {
+                let onset: Option<&str> = captures
                     .name("initial")
                     .filter(|m| !m.as_str().is_empty())
                     .map(|on| on.as_str());
-                let mut rhyme = cap
-                    .name("rime")
-                    .filter(|m| !m.as_str().is_empty())
-                    .context("Missing the vowel in the input text")?
-                    .as_str()
-                    .to_string();
-                let tone: Option<usize> = cap.name("tone").and_then(|t| t.as_str().parse().ok());
+
+                let mut rhyme: String =
+                    match captures.name("rime").filter(|m| !m.as_str().is_empty()) {
+                        Some(value) => value.as_str().to_string(),
+                        None => return Err(SiphonError::RhymeNotFound),
+                    };
+
+                let tone: Option<usize> =
+                    captures.name("tone").and_then(|t| t.as_str().parse().ok());
 
                 if matches!(self.format, Format::IPALaTeX)
                     | matches!(self.format, Format::IPASuperscript)
@@ -242,18 +245,19 @@ impl Siphon {
                         .tone(tone),
                 );
                 tokens.push(token);
-            } else if cap.name("space").is_some() {
+            } else if captures.name("space").is_some() {
                 tokens.push(Token::Space);
-            } else if cap.name("quote").is_some() {
+            } else if captures.name("quote").is_some() {
                 tokens.push(Token::Separator);
-            } else if let Some(punct) = cap.name("punctuation") {
+            } else if let Some(punct) = captures.name("punctuation") {
                 tokens.push(Token::Punctuation(punct.as_str().to_string()));
             }
         }
+
         Ok(tokens)
     }
 
-    pub fn transform(&self, tokens: Vec<Token>) -> Result<String> {
+    pub fn transform(&self, tokens: Vec<Token>) -> Result<String, SiphonError> {
         let transformed: Vec<String> = tokens
             .iter()
             .map(|tok| {

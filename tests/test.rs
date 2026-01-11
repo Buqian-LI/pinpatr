@@ -17,10 +17,7 @@ mod syllabel_test {
         for &(tone, output) in &test_cases {
             let onset = syllable.initial.as_ref().unwrap().clone();
             syllable.tone = Some(tone);
-            assert_eq!(
-                onset + &syllable.tone_to_diacritics(&syllable.full).unwrap(),
-                output
-            );
+            assert_eq!(onset + &syllable.tone_to_diacritics().unwrap(), output);
         }
     }
 
@@ -143,7 +140,7 @@ mod syllabel_test {
         for (rhyme, tone, expected) in test_cases {
             let syllable = Syllable::new().rhyme(rhyme).tone(Some(tone));
 
-            let result = syllable.tone_to_diacritics(&format!("{}{}", rhyme, tone));
+            let result = syllable.tone_to_diacritics();
             assert!(
                 result.is_ok(),
                 "Failed for rhyme {} tone {}: {:?}",
@@ -168,7 +165,7 @@ mod syllabel_test {
         for (rhyme, tone, expected) in priority_tests {
             let syllable = Syllable::new().rhyme(rhyme).tone(Some(tone));
 
-            let result = syllable.tone_to_diacritics(&format!("{}{}", rhyme, tone));
+            let result = syllable.tone_to_diacritics();
             assert!(
                 result.is_ok(),
                 "Failed for rhyme {} tone {}: {:?}",
@@ -188,7 +185,7 @@ mod syllabel_test {
         for (rhyme, tone, expected) in no_vowel_tests {
             let syllable = Syllable::new().rhyme(rhyme).tone(Some(tone));
 
-            let result = syllable.tone_to_diacritics(&format!("{}{}", rhyme, tone));
+            let result = syllable.tone_to_diacritics();
             assert!(
                 result.is_ok(),
                 "Failed for rhyme {} tone {}: {:?}",
@@ -234,9 +231,7 @@ mod syllabel_test {
             let syllable = Syllable::new().rhyme(rhyme).tone(Some(tone));
 
             // Test tone_to_diacritics
-            let result = syllable
-                .tone_to_diacritics(&format!("{}{}", rhyme, tone))
-                .unwrap();
+            let result = syllable.tone_to_diacritics().unwrap();
             assert_eq!(
                 result, expected,
                 "tone_to_diacritics failed for rhyme {} tone {}",
@@ -319,7 +314,7 @@ mod syllabel_test {
         let syllable = Syllable::new().rhyme("a").tone(Some(6)); // Invalid tone
 
         // tone_to_diacritics should handle invalid tones gracefully
-        let result = syllable.tone_to_diacritics(&syllable.full);
+        let result = syllable.tone_to_diacritics();
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "a"); // Should return original rhyme
 
@@ -480,8 +475,7 @@ mod exhaustive_test {
                         .tone(Some(tone));
 
                     // Test tone_to_diacritics
-                    let diacritic_result =
-                        syllable.tone_to_diacritics(&format!("{}{}{}", initial, rhyme, tone));
+                    let diacritic_result = syllable.tone_to_diacritics();
                     if let Ok(result) = diacritic_result {
                         // Verify properties for tone_to_diacritics
                         if tone == 0 || tone == 5 {
@@ -719,9 +713,7 @@ mod exhaustive_test {
                 .tone(Some(tone));
 
             // Test tone_to_diacritics
-            let diacritic_result = syllable
-                .tone_to_diacritics(&format!("{}{}{}", initial, rhyme, tone))
-                .unwrap();
+            let diacritic_result = syllable.tone_to_diacritics().unwrap();
             let expected_diacritic_rhyme = &expected_pinyin[initial.len()..]; // Remove initial
             assert_eq!(
                 diacritic_result, expected_diacritic_rhyme,

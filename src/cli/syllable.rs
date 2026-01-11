@@ -1,5 +1,7 @@
-use crate::{cli::Format, INITIAL_MAP, RHYME_MAP, TONE_DIACRITIC_MAP, TONE_SUPERSCRIPT_DIGITS};
-use anyhow::{anyhow, Result};
+use crate::{
+    cli::Format, error::SiphonError, INITIAL_MAP, RHYME_MAP, TONE_DIACRITIC_MAP,
+    TONE_SUPERSCRIPT_DIGITS,
+};
 
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct Syllable {
@@ -41,13 +43,17 @@ impl Syllable {
     ///     - \superscript{} (default) or any other customable wrapper
     /// - Unicode
     ///     - superscript numbers
-    pub fn convert_to_ipa(&self, format: &Format, latex_wrapper: &str) -> Result<(String, String)> {
+    pub fn convert_to_ipa(
+        &self,
+        format: &Format,
+        latex_wrapper: &str,
+    ) -> Result<(String, String), SiphonError> {
         // initial part
-        let onset: String = if let Some(initial) = &self.initial {
+        let onset = if let Some(initial) = &self.initial {
             INITIAL_MAP
                 .get(&initial.to_lowercase())
                 .copied()
-                .ok_or_else(|| anyhow!("The initial is not valid: {}", self.full))?
+                .ok_or_else(|| SiphonError::InvalidInitial(self.full.clone()))?
                 .to_string()
         } else {
             String::new()
@@ -57,7 +63,7 @@ impl Syllable {
         let rhyme: String = RHYME_MAP
             .get(&self.rhyme)
             .copied()
-            .ok_or_else(|| anyhow!("The rhyme is not valid : {}", self.full))?
+            .ok_or_else(|| SiphonError::InvalidRhyme(self.full.clone()))?
             .to_owned();
 
         // tone part
@@ -68,12 +74,7 @@ impl Syllable {
                 2 => "35",
                 3 => "214",
                 4 => "51",
-                _ => {
-                    return Err(anyhow!(
-                        "There are tones messed up in your input! -> {}",
-                        self.full
-                    ))
-                }
+                _ => return Err(SiphonError::TonConversionFail(self.full.clone())),
             }
         } else {
             ""
@@ -95,7 +96,11 @@ impl Syllable {
     }
 
     /// Convert pinyin with numbers into pinyin with diacritics
-    pub fn convert_to_pinyin(&self, format: &Format, wrapper: &str) -> Result<(String, String)> {
+    pub fn convert_to_pinyin(
+        &self,
+        format: &Format,
+        wrapper: &str,
+    ) -> Result<(String, String), SiphonError> {
         match format {
             // keep the word, but change the tone
             Format::PinyinLaTeX => {
@@ -106,7 +111,7 @@ impl Syllable {
                 }
 
                 let word_transformed = input_word.replace("v", "ü");
-                let tone_to_transform = self.transpose_tone_value(&input_word)?;
+                let tone_to_transform = self.transpose_tone_value()?;
                 let tone_transformed = if tone_to_transform.is_empty() {
                     String::new()
                 } else {
@@ -117,13 +122,13 @@ impl Syllable {
             // change tone to diacritic or superscript
             Format::PinyinDiacritic => {
                 let onset = self.initial.as_deref().unwrap_or_default();
-                let word_transformed = format!("{}{}", onset, self.tone_to_diacritics(&self.full)?);
+                let word_transformed = format!("{}{}", onset, self.tone_to_diacritics()?);
                 Ok((word_transformed, String::new()))
             }
             Format::PinyinSuperscript => {
                 let onset = self.initial.as_deref().unwrap_or_default();
                 let word_transformed = format!("{}{}", onset, self.rhyme.replace("v", "ü"));
-                let tone = self.transpose_tone_value(&word_transformed)?;
+                let tone = self.transpose_tone_value()?;
                 let tone_transformed = self.tone_to_superscript(tone);
                 Ok((word_transformed, tone_transformed))
             }
@@ -131,7 +136,7 @@ impl Syllable {
         }
     }
 
-    fn transpose_tone_value(&self, word: &str) -> Result<&str> {
+    fn transpose_tone_value(&self) -> Result<&str, SiphonError> {
         match self.tone {
             Some(t) => match t {
                 0 | 5 => Ok("0"),
@@ -139,9 +144,7 @@ impl Syllable {
                 2 => Ok("35"),
                 3 => Ok("214"),
                 4 => Ok("51"),
-                _ => Err(anyhow!(
-                    "There are tones messed up in your input! -> {word}{t}"
-                )),
+                _ => Err(SiphonError::TonConversionFail(self.full.to_string())),
             },
             None => Ok(""),
         }
@@ -161,17 +164,13 @@ impl Syllable {
     }
 
     /// transform 1-4 tones into diacritics on relevant vowels
-    pub fn tone_to_diacritics(&self, word: &str) -> Result<String> {
+    pub fn tone_to_diacritics(&self) -> Result<String, SiphonError> {
         // Determine the tone index (0-3) or return the original rhyme if invalid
         let tone_index = match self.tone {
             Some(real_tone) if (1..=4).contains(&real_tone) => real_tone - 1,
             Some(real_tone) if real_tone == 0 || real_tone == 5 => return Ok(self.rhyme.clone()),
-            _ => {
-                return Err(anyhow!(
-                    "There are tones messed up in your input! -> {}",
-                    word,
-                ))
-            } // Tone 0, 5, or invalid: no diacritic
+            _ => return Err(SiphonError::TonConversionFail(self.full.clone())),
+            // Tone 0, 5, or invalid: no diacritic
         };
 
         // Handle special case for "iu" first
@@ -197,7 +196,11 @@ impl Syllable {
     }
 
     /// Helper method to replace a vowel with its diacritic version
-    fn replace_vowel_with_diacritic(&self, vowel: &str, tone_index: usize) -> Result<String> {
+    fn replace_vowel_with_diacritic(
+        &self,
+        vowel: &str,
+        tone_index: usize,
+    ) -> Result<String, SiphonError> {
         if let Some(pos) = self.rhyme.find(vowel) {
             // Search through the array for the vowel
             for &(vowel_row, diacritics) in TONE_DIACRITIC_MAP.iter() {

@@ -1,4 +1,5 @@
 pub mod cli;
+pub mod error;
 
 pub use cli::token::Token;
 pub use cli::Siphon;

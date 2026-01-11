@@ -4,16 +4,25 @@ version = "1.6.0"
 edition = "2021"
 
 [profile.release]
-strip = true      # Automatically strip symbols from the binary.
-opt-level = "z"   # Optimize for size.
-codegen-units = 1
-lto = true
+strip = true            # Strip all symbols and debuginfo
+opt-level = "z"         # Optimize for size (sometimes better than "z")
+codegen-units = 1       # Better optimization, slower compilation
+lto = true              # Link-time optimization
+panic = "abort"         # Reduce binary size by using abort instead of unwind
+incremental = false     # Disable incremental compilation for release
+overflow-checks = false # Disable overflow checks for smaller code
+
+# Optimize specific dependencies
+[profile.release.package.regex]
+opt-level = "z"
+
+[profile.release.package.clap]
+opt-level = "z"
 
 [dependencies]
 anyhow = "1.0.96"
 clap = { version = "4.5.29", features = ["derive"] }
-indexmap = "2.7.1"
-lazy_static = "1.5.0"
 phf = { version = "0.11.3", features = ["macros"] }
 regex = "1.11.1"
 unicode-normalization = "0.1.24"
+thiserror = "2.0"
