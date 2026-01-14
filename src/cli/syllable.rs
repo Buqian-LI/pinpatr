@@ -169,30 +169,33 @@ impl Syllable {
         let tone_index = match self.tone {
             Some(real_tone) if (1..=4).contains(&real_tone) => real_tone - 1,
             Some(real_tone) if real_tone == 0 || real_tone == 5 => return Ok(self.rhyme.clone()),
-            _ => return Err(SiphonError::TonConversionFail(self.full.clone())),
+            None => return Ok(self.rhyme.clone()),
+            Some(_) => return Err(SiphonError::TonConversionFail(self.full.clone())),
             // Tone 0, 5, or invalid: no diacritic
         };
 
+        let rhyme = self.rhyme.replace("v", "ü");
+
         // Handle special case for "iu" first
-        if self.rhyme.contains("iu") {
+        if rhyme.contains("iu") {
             return self.replace_vowel_with_diacritic("u", tone_index);
         }
 
         // Check priority vowels: a, e, o
         for vowel in ["a", "e", "o"] {
-            if self.rhyme.contains(vowel) {
+            if rhyme.contains(vowel) {
                 return self.replace_vowel_with_diacritic(vowel, tone_index);
             }
         }
 
         // Check fallback vowels: i, u, ü, v
         for vowel in ["i", "u", "ü", "v"] {
-            if self.rhyme.contains(vowel) {
+            if rhyme.contains(vowel) {
                 return self.replace_vowel_with_diacritic(vowel, tone_index);
             }
         }
 
-        Ok(self.rhyme.clone())
+        Ok(rhyme.clone())
     }
 
     /// Helper method to replace a vowel with its diacritic version

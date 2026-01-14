@@ -839,7 +839,7 @@ mod core_test {
 
     #[test]
     fn test_convertion_pydia() {
-        let builder = Siphon::new("liu2 lve4 jiu3")
+        let builder = Siphon::new("liu2 lve4 jiu3 de")
             .format(Format::PinyinDiacritic)
             .wrapper("UP");
         let tokens: Vec<Token> = builder.tokenize().unwrap_or_else(|e| {
@@ -851,7 +851,7 @@ mod core_test {
             String::new()
         });
 
-        assert_eq!(output, "liú lüè jiǔ".to_string());
+        assert_eq!(output, "liú lüè jiǔ de".to_string());
     }
 
     #[test]
