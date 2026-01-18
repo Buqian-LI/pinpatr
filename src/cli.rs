@@ -209,6 +209,15 @@ impl Siphon {
             .replace("uu", "u")
     }
 
+    /// Correct rhyme parsing
+    fn correct_rhyme(&self, onset: Option<&str>, rhyme: String) -> String {
+        match onset {
+            Some("n" | "l") => rhyme.replace("ve", "üe").replace("ue", "üe"),
+            Some("y" | "j" | "q" | "x" | "Y" | "J" | "Q" | "X") => rhyme.replace("ve", "ue"),
+            _ => rhyme,
+        }
+    }
+
     /// Convert text from String to Vec<Token> using Regex
     pub fn tokenize(&self) -> Result<Vec<Token>, SiphonError> {
         let mut tokens: Vec<Token> = Vec::new();
@@ -235,6 +244,10 @@ impl Siphon {
                     | matches!(self.format, Format::IPASuperscript)
                 {
                     rhyme = self.normalize_rhyme(onset, rhyme);
+                }
+
+                if matches!(self.format, Format::PinyinDiacritic) {
+                    rhyme = self.correct_rhyme(onset, rhyme);
                 }
 
                 let token = Token::Syllable(

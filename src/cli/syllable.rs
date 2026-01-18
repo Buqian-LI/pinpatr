@@ -174,7 +174,7 @@ impl Syllable {
             // Tone 0, 5, or invalid: no diacritic
         };
 
-        let rhyme = self.rhyme.replace("v", "ü");
+        let rhyme = self.rhyme.clone();
 
         // Handle special case for "iu" first
         if rhyme.contains("iu") {
